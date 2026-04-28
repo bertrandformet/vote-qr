@@ -470,9 +470,10 @@
 
 <script>
   // ── CONFIG ──────────────────────────────────────────────
-  const WEBHOOK_ECRITURE = 'https://hook.eu2.make.com/batrolf35lvxfvnbeyktrovlxf9bnc7f';
-  const WEBHOOK_LECTURE  = 'https://hook.eu2.make.com/df9g9hmh0k59yunes6kekjuf1z6v2ho8';
-  const WEBHOOK_RESET    = 'https://hook.eu2.make.com/kgwcjbr6pohlsacwof8l2u9ub7mupqju';
+  const WEBHOOK = 'https://hook.eu2.make.com/9ovlch1yrk9y7xy0h7ehfl5enld1vbk8';
+  const WEBHOOK_ECRITURE = WEBHOOK;
+  const WEBHOOK_LECTURE  = WEBHOOK;
+  const WEBHOOK_RESET    = WEBHOOK;
 
   const CHOICES = [
     { id: 1, label: 'Tout à fait\nd\'accord',  shortLabel: 'Tout à fait d\'accord',  color: '#22c55e', cls: 'c1' },
@@ -542,10 +543,10 @@
     document.getElementById('btnStop').disabled   = false;
 
     try {
-      await fetch(WEBHOOK_RESET, {
+      await fetch(WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q })
+        body: JSON.stringify({ action: 'reset', question: q })
       });
     } catch(e) {
       console.warn('Reset webhook error', e);
@@ -602,7 +603,11 @@
   // ── POLL ─────────────────────────────────────────────────
   async function pollResults() {
     try {
-      const res  = await fetch(WEBHOOK_LECTURE);
+      const res  = await fetch(WEBHOOK_LECTURE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'read' })
+      });
       const data = await res.json();
       renderBars(data);
       document.getElementById('lastUpdate').textContent =
