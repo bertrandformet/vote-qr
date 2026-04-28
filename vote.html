@@ -162,10 +162,11 @@
       const choice = CHOICES[c];
 
       try {
-        await fetch(
-          WEBHOOK_ECRITURE + '?action=write&c=' + c + '&t=' + Date.now(),
-          { method: 'GET', mode: 'no-cors' }
-        );
+        await fetch(WEBHOOK_ECRITURE, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: new URLSearchParams({ action: 'write', c: c, t: Date.now() })
+        });
         showSuccess(choice, null);
       } catch(e) {
         showSuccess(choice, null, true);
