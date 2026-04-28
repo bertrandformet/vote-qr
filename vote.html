@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vote enregistré</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 32px;
+      max-width: 420px;
+      width: 100%;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .choice-badge {
+      display: inline-block;
+      padding: 10px 22px;
+      border-radius: 50px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 28px;
+      letter-spacing: 0.02em;
+    }
+
+    .checkmark {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .confirm-title {
+      font-size: 1rem;
+      color: var(--muted);
+      font-weight: 400;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.8rem;
+    }
+
+    .choice-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 28px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 0 24px;
+    }
+
+    .question-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .footer-note {
+      margin-top: 32px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* Error state */
+    .error-card {
+      background: var(--surface);
+      border: 1px solid #ef4444;
+      border-radius: 20px;
+      padding: 40px 32px;
+      max-width: 420px;
+      width: 100%;
+    }
+    .error-card h2 { color: #ef4444; margin-bottom: 12px; }
+    .error-card p  { color: var(--muted); font-size: 0.9rem; }
+
+    /* Loading */
+    .loading {
+      color: var(--muted);
+      font-size: 1rem;
+    }
+    .spinner {
+      display: inline-block;
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--text);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Envoi de votre réponse…</p>
+    </div>
+  </div>
+
+  <script>
+    const WEBHOOK_ECRITURE = 'https://hook.eu2.make.com/batrolf35lvxfvnbeyktrovlxf9bnc7f';
+
+    const CHOICES = {
+      1: { label: 'Tout à fait d\'accord',  color: '#22c55e', bg: 'rgba(34,197,94,0.15)',  border: '#22c55e' },
+      2: { label: 'Plutôt d\'accord',       color: '#84cc16', bg: 'rgba(132,204,22,0.15)', border: '#84cc16' },
+      3: { label: 'Plutôt pas d\'accord',   color: '#f97316', bg: 'rgba(249,115,22,0.15)', border: '#f97316' },
+      4: { label: 'Pas du tout d\'accord',  color: '#ef4444', bg: 'rgba(239,68,68,0.15)',  border: '#ef4444' },
+    };
+
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const c = parseInt(params.get('c'));
+
+      if (!c || c < 1 || c > 4) {
+        showError('Lien invalide', 'Le paramètre de choix est manquant ou incorrect. Veuillez scanner à nouveau le QR code.');
+        return;
+      }
+
+      const choice = CHOICES[c];
+
+      try {
+        const res = await fetch(WEBHOOK_ECRITURE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ c })
+        });
+
+        let question = null;
+        if (res.ok) {
+          try {
+            const data = await res.json();
+            question = data.question || null;
+          } catch(e) {}
+        }
+
+        showSuccess(choice, question);
+
+      } catch(e) {
+        // Even if network fails, still show confirmation
+        // (scan was likely received before timeout)
+        showSuccess(choice, null, true);
+      }
+    }
+
+    function showSuccess(choice, question, networkError = false) {
+      document.getElementById('app').innerHTML = `
+        <div class="card" style="border-top: 4px solid ${choice.border};">
+          <span class="checkmark">✓</span>
+          <p class="confirm-title">Votre réponse</p>
+          <div class="choice-badge" style="color:${choice.color};background:${choice.bg};border:1.5px solid ${choice.border};">
+            ${choice.label}
+          </div>
+          ${question ? `
+            <div class="divider"></div>
+            <p class="question-label">Affirmation soumise</p>
+            <p class="question-text">${escapeHtml(question)}</p>
+          ` : ''}
+        </div>
+        <p class="footer-note">Vote enregistré${networkError ? ' (à confirmer)' : ''} — vous pouvez fermer cet onglet</p>
+      `;
+    }
+
+    function showError(title, message) {
+      document.getElementById('app').innerHTML = `
+        <div class="error-card">
+          <h2>⚠ ${title}</h2>
+          <p>${message}</p>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    init();
+  </script>
+
+</body>
+</html>

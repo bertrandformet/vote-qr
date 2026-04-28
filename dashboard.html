@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Vote QR — Formateur</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --c1: #22c55e;
+      --c2: #84cc16;
+      --c3: #f97316;
+      --c4: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--muted);
+      display: inline-block;
+      margin-right: 8px;
+      transition: background 0.3s;
+    }
+    .status-dot.active { background: var(--c1); box-shadow: 0 0 8px var(--c1); animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* CONFIG URL */
+    .config-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .config-bar label { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+    .config-bar input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+    }
+    .config-bar input:focus { outline: none; border-color: var(--c1); }
+    .btn-apply {
+      background: var(--border);
+      border: none;
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-apply:hover { background: #3a3d4a; }
+
+    /* QUESTION + CONTROLS */
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      align-items: stretch;
+    }
+
+    .question-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 400;
+      transition: border-color 0.2s;
+    }
+    .question-input:focus { outline: none; border-color: var(--c1); }
+    .question-input::placeholder { color: var(--muted); }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 14px 22px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.03em;
+    }
+
+    .btn-launch {
+      background: var(--c1);
+      color: #0f1117;
+    }
+    .btn-launch:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-launch:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-stop {
+      background: var(--surface);
+      color: var(--c4);
+      border: 1px solid var(--c4);
+    }
+    .btn-stop:hover { background: rgba(239,68,68,0.1); }
+    .btn-stop:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* TIMER */
+    .timer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .timer {
+      font-family: 'Space Mono', monospace;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.05em;
+    }
+    .timer.running { color: var(--c1); }
+
+    .total-votes {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .total-votes span {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-left: 6px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .current-question {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--surface);
+      border-left: 3px solid var(--c1);
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 28px;
+      min-height: 44px;
+    }
+    .current-question.empty { color: var(--muted); font-weight: 400; font-style: italic; }
+
+    /* QR + BARS GRID */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    /* QR CODES */
+    .qr-section h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .qr-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .qr-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      transition: border-color 0.3s;
+    }
+    .qr-card:nth-child(1) { border-top: 3px solid var(--c1); }
+    .qr-card:nth-child(2) { border-top: 3px solid var(--c2); }
+    .qr-card:nth-child(3) { border-top: 3px solid var(--c3); }
+    .qr-card:nth-child(4) { border-top: 3px solid var(--c4); }
+
+    .qr-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 140px;
+      height: 140px;
+    }
+
+    .qr-wrapper canvas, .qr-wrapper img {
+      width: 140px !important;
+      height: 140px !important;
+      border-radius: 8px;
+    }
+
+    .qr-center-label {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 6px;
+      padding: 4px 7px;
+      text-align: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #0f1117;
+      pointer-events: none;
+      max-width: 68px;
+    }
+
+    .qr-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    .qr-label.c1 { color: var(--c1); }
+    .qr-label.c2 { color: var(--c2); }
+    .qr-label.c3 { color: var(--c3); }
+    .qr-label.c4 { color: var(--c4); }
+
+    .qr-placeholder {
+      width: 140px; height: 140px;
+      background: var(--bg);
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 12px;
+    }
+
+    /* BARS */
+    .bars-section h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .bars {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .bar-label {
+      width: 160px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .bar-label.c1 { color: var(--c1); }
+    .bar-label.c2 { color: var(--c2); }
+    .bar-label.c3 { color: var(--c3); }
+    .bar-label.c4 { color: var(--c4); }
+
+    .bar-track {
+      flex: 1;
+      height: 28px;
+      background: var(--bg);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      min-width: 0;
+    }
+    .bar-fill .pct {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: rgba(0,0,0,0.7);
+    }
+
+    .bar-count {
+      width: 36px;
+      text-align: right;
+      font-family: 'Space Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .bar-count.c1 { color: var(--c1); }
+    .bar-count.c2 { color: var(--c2); }
+    .bar-count.c3 { color: var(--c3); }
+    .bar-count.c4 { color: var(--c4); }
+
+    .bar-fill.c1 { background: var(--c1); }
+    .bar-fill.c2 { background: var(--c2); }
+    .bar-fill.c3 { background: var(--c3); }
+    .bar-fill.c4 { background: var(--c4); }
+
+    .no-vote-msg {
+      color: var(--muted);
+      font-style: italic;
+      font-size: 0.9rem;
+      padding: 20px 0;
+    }
+
+    /* FOOTER */
+    footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🗳 Dashboard Vote QR</h1>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText" style="font-size:0.85rem;color:var(--muted);">En attente</span>
+  </div>
+</header>
+
+<!-- CONFIG URL -->
+<div class="config-bar">
+  <label>URL GitHub Pages :</label>
+  <input type="text" id="baseUrl" placeholder="https://votre-nom.github.io/vote-qr" />
+  <button class="btn-apply" onclick="applyUrl()">Générer QR codes</button>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <input type="text" class="question-input" id="questionInput"
+         placeholder="Tapez votre affirmation ici…" />
+  <button class="btn btn-launch" id="btnLaunch" onclick="lancerVote()">▶ Lancer le vote</button>
+  <button class="btn btn-stop" id="btnStop" onclick="arreterVote()" disabled>■ Arrêter</button>
+</div>
+
+<!-- QUESTION EN COURS -->
+<div class="current-question empty" id="currentQuestion">Aucun vote en cours</div>
+
+<!-- TIMER + TOTAL -->
+<div class="timer-bar">
+  <div class="timer" id="timerDisplay">00:00</div>
+  <div class="total-votes">Réponses reçues <span id="totalVotes">0</span></div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main-grid">
+
+  <!-- QR CODES -->
+  <div class="qr-section">
+    <h2>📱 QR Codes à projeter</h2>
+    <div class="qr-grid">
+
+      <div class="qr-card">
+        <div class="qr-wrapper" id="qrWrapper1">
+          <div class="qr-placeholder" id="qrPlaceholder1">Entrez l'URL<br>GitHub Pages</div>
+        </div>
+        <div class="qr-label c1">Tout à fait d'accord</div>
+      </div>
+
+      <div class="qr-card">
+        <div class="qr-wrapper" id="qrWrapper2">
+          <div class="qr-placeholder" id="qrPlaceholder2">Entrez l'URL<br>GitHub Pages</div>
+        </div>
+        <div class="qr-label c2">Plutôt d'accord</div>
+      </div>
+
+      <div class="qr-card">
+        <div class="qr-wrapper" id="qrWrapper3">
+          <div class="qr-placeholder" id="qrPlaceholder3">Entrez l'URL<br>GitHub Pages</div>
+        </div>
+        <div class="qr-label c3">Plutôt pas d'accord</div>
+      </div>
+
+      <div class="qr-card">
+        <div class="qr-wrapper" id="qrWrapper4">
+          <div class="qr-placeholder" id="qrPlaceholder4">Entrez l'URL<br>GitHub Pages</div>
+        </div>
+        <div class="qr-label c4">Pas du tout d'accord</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RÉSULTATS -->
+  <div class="bars-section">
+    <h2>📊 Résultats en temps réel</h2>
+    <div class="bars" id="barsContainer">
+      <div class="no-vote-msg">Lance un vote pour voir les résultats.</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>Rafraîchissement toutes les 3s</span>
+  <span id="lastUpdate">—</span>
+</footer>
+
+<script>
+  // ── CONFIG ──────────────────────────────────────────────
+  const WEBHOOK_ECRITURE = 'https://hook.eu2.make.com/batrolf35lvxfvnbeyktrovlxf9bnc7f';
+  const WEBHOOK_LECTURE  = 'https://hook.eu2.make.com/df9g9hmh0k59yunes6kekjuf1z6v2ho8';
+  const WEBHOOK_RESET    = 'https://hook.eu2.make.com/kgwcjbr6pohlsacwof8l2u9ub7mupqju';
+
+  const CHOICES = [
+    { id: 1, label: 'Tout à fait\nd\'accord',  shortLabel: 'Tout à fait d\'accord',  color: '#22c55e', cls: 'c1' },
+    { id: 2, label: 'Plutôt\nd\'accord',       shortLabel: 'Plutôt d\'accord',       color: '#84cc16', cls: 'c2' },
+    { id: 3, label: 'Plutôt pas\nd\'accord',   shortLabel: 'Plutôt pas d\'accord',   color: '#f97316', cls: 'c3' },
+    { id: 4, label: 'Pas du tout\nd\'accord',  shortLabel: 'Pas du tout d\'accord',  color: '#ef4444', cls: 'c4' },
+  ];
+
+  // ── STATE ────────────────────────────────────────────────
+  let isActive   = false;
+  let timerStart = null;
+  let timerInterval = null;
+  let pollInterval  = null;
+  let qrGenerated   = false;
+
+  // ── QR GENERATION ────────────────────────────────────────
+  function applyUrl() {
+    const base = document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
+    if (!base) { alert('Merci de saisir une URL GitHub Pages.'); return; }
+
+    CHOICES.forEach(ch => {
+      const wrapperId   = 'qrWrapper' + ch.id;
+      const placeholder = 'qrPlaceholder' + ch.id;
+      const wrapper     = document.getElementById(wrapperId);
+
+      // Remove placeholder
+      const ph = document.getElementById(placeholder);
+      if (ph) ph.remove();
+
+      // Remove old QR if regenerating
+      const old = wrapper.querySelector('div[data-qr]');
+      if (old) old.remove();
+      const oldCanvas = wrapper.querySelector('canvas');
+      if (oldCanvas) oldCanvas.remove();
+      const oldImg = wrapper.querySelector('img');
+      if (oldImg) oldImg.remove();
+
+      const url = `${base}/vote.html?c=${ch.id}`;
+
+      const qrDiv = document.createElement('div');
+      qrDiv.setAttribute('data-qr', ch.id);
+      wrapper.appendChild(qrDiv);
+
+      new QRCode(qrDiv, {
+        text: url,
+        width: 140,
+        height: 140,
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      // Overlay label
+      const labelDiv = document.createElement('div');
+      labelDiv.className = 'qr-center-label';
+      labelDiv.innerHTML = ch.label.replace('\n', '<br>');
+      wrapper.appendChild(labelDiv);
+    });
+
+    qrGenerated = true;
+  }
+
+  // ── LANCER ───────────────────────────────────────────────
+  async function lancerVote() {
+    const q = document.getElementById('questionInput').value.trim();
+    if (!q) { alert('Merci de saisir une affirmation avant de lancer le vote.'); return; }
+
+    document.getElementById('btnLaunch').disabled = true;
+    document.getElementById('btnStop').disabled   = false;
+
+    try {
+      await fetch(WEBHOOK_RESET, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      });
+    } catch(e) {
+      console.warn('Reset webhook error', e);
+    }
+
+    isActive   = true;
+    timerStart = Date.now();
+
+    // Status
+    document.getElementById('statusDot').classList.add('active');
+    document.getElementById('statusText').textContent = 'Vote en cours';
+
+    // Question display
+    const cq = document.getElementById('currentQuestion');
+    cq.textContent = q;
+    cq.classList.remove('empty');
+
+    // Timer
+    clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimer, 1000);
+
+    // Poll
+    clearInterval(pollInterval);
+    pollInterval = setInterval(pollResults, 3000);
+    pollResults();
+  }
+
+  // ── ARRÊTER ──────────────────────────────────────────────
+  function arreterVote() {
+    isActive = false;
+    clearInterval(timerInterval);
+    clearInterval(pollInterval);
+
+    document.getElementById('btnLaunch').disabled = false;
+    document.getElementById('btnStop').disabled   = true;
+    document.getElementById('statusDot').classList.remove('active');
+    document.getElementById('statusText').textContent = 'Vote terminé';
+
+    // Final poll
+    pollResults();
+  }
+
+  // ── TIMER ────────────────────────────────────────────────
+  function updateTimer() {
+    if (!timerStart) return;
+    const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+    const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const s = String(elapsed % 60).padStart(2, '0');
+    const el = document.getElementById('timerDisplay');
+    el.textContent = `${m}:${s}`;
+    el.className = 'timer' + (isActive ? ' running' : '');
+  }
+
+  // ── POLL ─────────────────────────────────────────────────
+  async function pollResults() {
+    try {
+      const res  = await fetch(WEBHOOK_LECTURE);
+      const data = await res.json();
+      renderBars(data);
+      document.getElementById('lastUpdate').textContent =
+        'Mis à jour : ' + new Date().toLocaleTimeString('fr-FR');
+    } catch(e) {
+      console.warn('Poll error', e);
+    }
+  }
+
+  // ── RENDER BARS ──────────────────────────────────────────
+  function renderBars(data) {
+    const counts  = [data.c1 || 0, data.c2 || 0, data.c3 || 0, data.c4 || 0];
+    const total   = counts.reduce((a, b) => a + b, 0);
+    const max     = Math.max(...counts, 1);
+
+    document.getElementById('totalVotes').textContent = total;
+
+    const container = document.getElementById('barsContainer');
+    container.innerHTML = '';
+
+    CHOICES.forEach((ch, i) => {
+      const count = counts[i];
+      const pct   = total > 0 ? Math.round(count / total * 100) : 0;
+      const width = Math.round(count / max * 100);
+
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `
+        <div class="bar-label ${ch.cls}">${ch.shortLabel}</div>
+        <div class="bar-track">
+          <div class="bar-fill ${ch.cls}" style="width:${width}%">
+            ${width > 15 ? `<span class="pct">${pct}%</span>` : ''}
+          </div>
+        </div>
+        <div class="bar-count ${ch.cls}">${count}</div>
+      `;
+      container.appendChild(row);
+    });
+  }
+</script>
+
+</body>
+</html>
