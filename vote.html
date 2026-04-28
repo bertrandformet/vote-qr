@@ -161,14 +161,21 @@
 
       const choice = CHOICES[c];
 
+      // DEBUG — à retirer après diagnostic
+      document.getElementById('app').innerHTML = '<p style="color:white;padding:20px">Envoi c=' + c + '…</p>';
+
       try {
-        await fetch(WEBHOOK_ECRITURE, {
+        const resp = await fetch(WEBHOOK_ECRITURE, {
           method: 'POST',
           mode: 'no-cors',
           body: new URLSearchParams({ action: 'write', c: c, t: Date.now() })
         });
+        document.getElementById('app').innerHTML = '<p style="color:lime;padding:20px">Fetch OK — c=' + c + ' type=' + resp.type + '</p>';
+        await new Promise(r => setTimeout(r, 1500));
         showSuccess(choice, null);
       } catch(e) {
+        document.getElementById('app').innerHTML = '<p style="color:red;padding:20px">Fetch ERREUR — c=' + c + ' : ' + e.message + '</p>';
+        await new Promise(r => setTimeout(r, 1500));
         showSuccess(choice, null, true);
       }
     }
