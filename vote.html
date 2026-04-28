@@ -150,7 +150,7 @@
       4: { label: 'Pas du tout d\'accord',  color: '#ef4444', bg: 'rgba(239,68,68,0.15)',  border: '#ef4444' },
     };
 
-    async function init() {
+    function init() {
       const params = new URLSearchParams(window.location.search);
       const c = parseInt(params.get('c'));
 
@@ -159,20 +159,7 @@
         return;
       }
 
-      const choice = CHOICES[c];
-
-      // DEBUG — à retirer après diagnostic
-      document.getElementById('app').innerHTML = '<p style="color:white;padding:20px">Envoi c=' + c + '…</p>';
-
-      await new Promise((resolve) => {
-        const frame = document.createElement('iframe');
-        frame.style.display = 'none';
-        frame.src = WEBHOOK_ECRITURE + '?action=write&c=' + c + '&t=' + Date.now();
-        frame.onload = frame.onerror = resolve;
-        document.body.appendChild(frame);
-        setTimeout(resolve, 4000);
-      });
-      showSuccess(choice, null);
+      window.location.href = WEBHOOK_ECRITURE + '?action=write&c=' + c + '&t=' + Date.now();
     }
 
     function showSuccess(choice, question, networkError = false) {
