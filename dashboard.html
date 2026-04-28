@@ -476,10 +476,7 @@
 
 <script>
   // ── CONFIG ──────────────────────────────────────────────
-  const WEBHOOK = 'https://hook.eu2.make.com/9ovlch1yrk9y7xy0h7ehfl5enld1vbk8';
-  const WEBHOOK_ECRITURE = WEBHOOK;
-  const WEBHOOK_LECTURE  = WEBHOOK;
-  const WEBHOOK_RESET    = WEBHOOK;
+  const WEBHOOK = 'https://script.google.com/macros/s/AKfycbxjtbJsNKyOGFLCbVV8akxdXK-A8U-F_jVakv1_uQBWqepof96FLMpWCIKHXv4sc6fBAg/exec';
 
   const CHOICES = [
     { id: 1, label: 'Tout à fait\nd\'accord',  shortLabel: 'Tout à fait d\'accord',  color: '#22c55e', cls: 'c1' },
@@ -582,7 +579,7 @@
 
     // Poll
     clearInterval(pollInterval);
-    pollInterval = setInterval(pollResults, 10000);
+    pollInterval = setInterval(pollResults, 3000);
     pollResults();
   }
 
@@ -617,11 +614,7 @@
   // ── POLL ─────────────────────────────────────────────────
   async function pollResults() {
     try {
-      const res  = await fetch(WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'read' })
-      });
+      const res = await fetch(WEBHOOK + '?action=read');
       const data = await res.json();
       renderBars(data);
       document.getElementById('lastUpdate').textContent =
