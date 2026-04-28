@@ -491,11 +491,13 @@
   let timerInterval = null;
   let pollInterval  = null;
   let qrGenerated   = false;
+  let currentFetchController = null;
 
   // ── QR GENERATION ────────────────────────────────────────
   function applyUrl() {
     const base = document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
     if (!base) { alert('Merci de saisir une URL GitHub Pages.'); return; }
+    try { new URL(base); } catch { alert('URL invalide. Exemple : https://votre-nom.github.io/vote-qr'); return; }
 
     CHOICES.forEach(ch => {
       const wrapperId   = 'qrWrapper' + ch.id;
@@ -506,13 +508,8 @@
       const ph = document.getElementById(placeholder);
       if (ph) ph.remove();
 
-      // Remove old QR if regenerating
-      const old = wrapper.querySelector('div[data-qr]');
-      if (old) old.remove();
-      const oldCanvas = wrapper.querySelector('canvas');
-      if (oldCanvas) oldCanvas.remove();
-      const oldImg = wrapper.querySelector('img');
-      if (oldImg) oldImg.remove();
+      // Remove old QR and overlay if regenerating
+      wrapper.querySelectorAll('div[data-qr], canvas, img, .qr-center-label').forEach(el => el.remove());
 
       const url = `${base}/vote.html?c=${ch.id}`;
 
@@ -527,10 +524,13 @@
         correctLevel: QRCode.CorrectLevel.H
       });
 
-      // Overlay label
+      // Overlay label — textContent only, no innerHTML
       const labelDiv = document.createElement('div');
       labelDiv.className = 'qr-center-label';
-      labelDiv.innerHTML = ch.label.replace('\n', '<br>');
+      ch.label.split('\n').forEach((part, idx) => {
+        if (idx > 0) labelDiv.appendChild(document.createElement('br'));
+        labelDiv.appendChild(document.createTextNode(part));
+      });
       wrapper.appendChild(labelDiv);
     });
 
@@ -591,6 +591,7 @@
     isActive = false;
     clearInterval(timerInterval);
     clearInterval(pollInterval);
+    if (currentFetchController) { currentFetchController.abort(); currentFetchController = null; }
 
     document.getElementById('btnLaunch').disabled = false;
     document.getElementById('btnStop').disabled   = true;
@@ -615,12 +616,32 @@
   // ── POLL ─────────────────────────────────────────────────
   const CSV_URL = 'https://docs.google.com/spreadsheets/d/1yynehPOmivMRL6mt3jRsN61xxuKCargWQ6wOtzBY3Lo/gviz/tq?tqx=out:csv&range=A2:E2&sheet=Feuille%201';
 
+  function parseCSVLine(line) {
+    const result = [];
+    let cur = '';
+    let inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuote && line[i + 1] === '"') { cur += '"'; i++; }
+        else { inQuote = !inQuote; }
+      } else if (ch === ',' && !inQuote) {
+        result.push(cur); cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    result.push(cur);
+    return result;
+  }
+
   async function pollResults() {
+    if (currentFetchController) currentFetchController.abort();
+    currentFetchController = new AbortController();
     try {
-      const res  = await fetch(CSV_URL + '&t=' + Date.now());
+      const res  = await fetch(CSV_URL + '&t=' + Date.now(), { signal: currentFetchController.signal });
       const text = await res.text();
-      // CSV: "3","0","0","0","question"
-      const vals = text.replace(/"/g, '').split(',');
+      const vals = parseCSVLine(text.trim());
       const data = {
         c1: parseInt(vals[0]) || 0,
         c2: parseInt(vals[1]) || 0,
@@ -628,11 +649,12 @@
         c4: parseInt(vals[3]) || 0,
         question: vals[4] || ''
       };
+      currentFetchController = null;
       renderBars(data);
       document.getElementById('lastUpdate').textContent =
         'Mis à jour : ' + new Date().toLocaleTimeString('fr-FR');
     } catch(e) {
-      console.warn('Poll error', e);
+      if (e.name !== 'AbortError') console.warn('Poll error', e);
     }
   }
 
@@ -675,12 +697,6 @@
   function openQRTab(darkMode) {
     if (!qrGenerated) { alert("Générez d'abord les QR codes."); return; }
     const base = getBaseUrl();
-    const CHOICES = [
-      { id:1, label:"Tout à fait d'accord",  short:"Tout à fait\nd'accord",  color:"#22c55e" },
-      { id:2, label:"Plutôt d'accord",        short:"Plutôt\nd'accord",       color:"#84cc16" },
-      { id:3, label:"Plutôt pas d'accord",    short:"Plutôt pas\nd'accord",   color:"#f97316" },
-      { id:4, label:"Pas du tout d'accord",   short:"Pas du tout\nd'accord",  color:"#ef4444" },
-    ];
 
     const urls = CHOICES.map(ch => base + '/vote.html?c=' + ch.id);
 
@@ -694,7 +710,7 @@
                   background:${cardBg};border-radius:16px;
                   border-top:4px solid ${ch.color};">
         <div id="qrout${i+1}" style="position:relative;display:inline-block;"></div>
-        <div style="font-family:sans-serif;font-size:1rem;font-weight:700;color:${ch.color};text-align:center;">${ch.label}</div>
+        <div style="font-family:sans-serif;font-size:1rem;font-weight:700;color:${ch.color};text-align:center;">${ch.shortLabel}</div>
       </div>
     `).join('');
 
@@ -729,7 +745,7 @@
   </div>
   <script>
     const urls = ${JSON.stringify(urls)};
-    const shorts = ${JSON.stringify(CHOICES.map(ch => ch.short))};
+    const shorts = ${JSON.stringify(CHOICES.map(ch => ch.label))};
     [1,2,3,4].forEach(function(i) {
       var wrap = document.getElementById('qrout'+i);
       new QRCode(wrap, { text: urls[i-1], width: ${qrSize}, height: ${qrSize}, correctLevel: QRCode.CorrectLevel.H });
@@ -750,6 +766,7 @@
     const blob = new Blob([html], { type: 'text/html' });
     const url  = URL.createObjectURL(blob);
     window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
   function afficherQR()  { openQRTab(true);  }
