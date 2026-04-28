@@ -552,11 +552,7 @@
     document.getElementById('btnStop').disabled   = false;
 
     try {
-      await fetch(WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reset', question: q })
-      });
+      await fetch(WEBHOOK + '?action=reset&question=' + encodeURIComponent(q));
     } catch(e) {
       console.warn('Reset webhook error', e);
     }

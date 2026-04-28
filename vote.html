@@ -142,7 +142,7 @@
   </div>
 
   <script>
-    const WEBHOOK_ECRITURE = 'https://hook.eu2.make.com/9ovlch1yrk9y7xy0h7ehfl5enld1vbk8';
+    const WEBHOOK_ECRITURE = 'https://script.google.com/macros/s/AKfycbxjtbJsNKyOGFLCbVV8akxdXK-A8U-F_jVakv1_uQBWqepof96FLMpWCIKHXv4sc6fBAg/exec';
 
     const CHOICES = {
       1: { label: 'Tout à fait d\'accord',  color: '#22c55e', bg: 'rgba(34,197,94,0.15)',  border: '#22c55e' },
@@ -163,11 +163,7 @@
       const choice = CHOICES[c];
 
       try {
-        const res = await fetch(WEBHOOK_ECRITURE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'write', c })
-        });
+        const res = await fetch(WEBHOOK_ECRITURE + '?action=write&c=' + c);
 
         let question = null;
         if (res.ok) {
