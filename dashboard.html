@@ -667,131 +667,88 @@
     return document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
   }
 
-  function buildQRPage(title, qrSize, cols) {
+  function openQRTab(darkMode) {
+    if (!qrGenerated) { alert("Générez d'abord les QR codes."); return; }
     const base = getBaseUrl();
-    const choices = [
-      { id:1, label:"Tout à fait d'accord",  color:'#22c55e' },
-      { id:2, label:"Plutôt d'accord",       color:'#84cc16' },
-      { id:3, label:"Plutôt pas d'accord",   color:'#f97316' },
-      { id:4, label:"Pas du tout d'accord",  color:'#ef4444' },
+    const CHOICES = [
+      { id:1, label:"Tout à fait d'accord",  short:"Tout à fait\nd'accord",  color:"#22c55e" },
+      { id:2, label:"Plutôt d'accord",        short:"Plutôt\nd'accord",       color:"#84cc16" },
+      { id:3, label:"Plutôt pas d'accord",    short:"Plutôt pas\nd'accord",   color:"#f97316" },
+      { id:4, label:"Pas du tout d'accord",   short:"Pas du tout\nd'accord",  color:"#ef4444" },
     ];
 
-    const cards = choices.map(ch => `
-      <div class="qr-card">
-        <div class="qr-wrap" id="qr${ch.id}p"></div>
-        <div class="label" style="color:${ch.color}">${ch.label}</div>
+    const urls = CHOICES.map(ch => base + '/vote.html?c=' + ch.id);
+
+    const bg      = darkMode ? '#0f1117' : '#ffffff';
+    const cardBg  = darkMode ? '#1a1d27' : '#f9f9f9';
+    const textCol = darkMode ? '#e8eaf0' : '#111111';
+    const qrSize  = darkMode ? 260 : 200;
+
+    const cardsHTML = CHOICES.map((ch, i) => `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px;
+                  background:${cardBg};border-radius:16px;
+                  border-top:4px solid ${ch.color};">
+        <div id="qrout${i+1}" style="position:relative;display:inline-block;"></div>
+        <div style="font-family:sans-serif;font-size:1rem;font-weight:700;color:${ch.color};text-align:center;">${ch.label}</div>
       </div>
     `).join('');
 
-    const urls = choices.map(ch => `"${base}/vote.html?c=${ch.id}"`).join(',');
-
-    return `<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>QR Codes — Vote</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>QR Codes Vote</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><` + `/script>
   <style>
-    @page { size: A4 portrait; margin: 15mm; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      background: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    h1 {
-      font-size: 1.1rem;
-      color: #444;
-      margin-bottom: 24px;
-      text-align: center;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(${cols}, 1fr);
-      gap: 24px;
-      width: 100%;
-      max-width: ${cols === 2 ? '600px' : '800px'};
-    }
-    .qr-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      padding: 20px;
-      border: 2px solid #f0f0f0;
-      border-radius: 16px;
-    }
-    .qr-wrap {
-      position: relative;
-      display: inline-block;
-    }
-    .qr-wrap canvas, .qr-wrap img { border-radius: 8px; }
-    .center-label {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      border-radius: 6px;
-      padding: 4px 8px;
-      text-align: center;
-      font-size: 0.65rem;
-      font-weight: 700;
-      line-height: 1.3;
-      color: #111;
-      pointer-events: none;
-      max-width: ${Math.round(qrSize * 0.48)}px;
-    }
-    .label {
-      font-size: 1rem;
-      font-weight: 700;
-      text-align: center;
-    }
-    .no-print { margin-top: 24px; }
-    @media print { .no-print { display: none; } }
+    @page { size: A4 portrait; margin: 12mm; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:${bg}; min-height:100vh; display:flex; flex-direction:column;
+           align-items:center; justify-content:center; padding:32px 24px; gap:24px; }
+    h1 { font-family:sans-serif; font-size:0.9rem; letter-spacing:0.1em; text-transform:uppercase;
+         color:${darkMode ? '#6b7280' : '#999'}; text-align:center; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; width:100%; max-width:640px; }
+    .no-print { display:flex; gap:12px; }
+    @media print { .no-print { display:none !important; } }
+    .btn-print { padding:10px 22px; background:${darkMode ? '#e8eaf0' : '#111'};
+                 color:${darkMode ? '#111' : '#fff'}; border:none; border-radius:8px;
+                 cursor:pointer; font-size:0.9rem; font-weight:600; font-family:sans-serif; }
   </style>
 </head>
 <body>
   <h1>📱 Scannez le QR code correspondant à votre réponse</h1>
-  <div class="grid">${cards}</div>
+  <div class="grid">${cardsHTML}</div>
   <div class="no-print">
-    <button onclick="window.print()" style="padding:10px 24px;background:#111;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem;">🖨 Imprimer</button>
+    <button class="btn-print" onclick="window.print()">🖨 Imprimer</button>
+    <button class="btn-print" onclick="window.close()">✕ Fermer</button>
   </div>
   <script>
-    const urls = [${urls}];
-    const labels = ['Tout à fait\nd\'accord','Plutôt\nd\'accord','Plutôt pas\nd\'accord','Pas du tout\nd\'accord'];
-    [1,2,3,4].forEach(i => {
-      const wrap = document.getElementById('qr'+i+'p');
+    const urls = ${JSON.stringify(urls)};
+    const shorts = ${JSON.stringify(CHOICES.map(ch => ch.short))};
+    [1,2,3,4].forEach(function(i) {
+      var wrap = document.getElementById('qrout'+i);
       new QRCode(wrap, { text: urls[i-1], width: ${qrSize}, height: ${qrSize}, correctLevel: QRCode.CorrectLevel.H });
-      const lbl = document.createElement('div');
-      lbl.className = 'center-label';
-      lbl.innerHTML = labels[i-1].replace('\\n','<br>').replace('\n','<br>');
-      wrap.appendChild(lbl);
+      setTimeout(function() {
+        var lbl = document.createElement('div');
+        lbl.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
+          'background:white;border-radius:5px;padding:3px 6px;text-align:center;' +
+          'font-family:sans-serif;font-size:0.62rem;font-weight:700;line-height:1.3;color:#111;' +
+          'pointer-events:none;max-width:' + Math.round(${qrSize} * 0.46) + 'px;white-space:pre-line;';
+        lbl.textContent = shorts[i-1];
+        wrap.appendChild(lbl);
+      }, 100);
     });
-  <\/script>
+  <` + `/script>
 </body>
 </html>`;
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   }
 
-  function exporterA4() {
-    if (!qrGenerated) { alert('Générez d\'abord les QR codes.'); return; }
-    const win = window.open('', '_blank');
-    win.document.write(buildQRPage('Export A4', 220, 2));
-    win.document.close();
-  }
-
-  function afficherQR() {
-    if (!qrGenerated) { alert('Générez d\'abord les QR codes.'); return; }
-    const win = window.open('', '_blank');
-    win.document.write(buildQRPage('Affichage', 280, 2));
-    win.document.close();
-  }
+  function afficherQR()  { openQRTab(true);  }
+  function exporterA4()  { openQRTab(false); }
 
   window.addEventListener('beforeunload', function(e) {
     if (isActive) {
