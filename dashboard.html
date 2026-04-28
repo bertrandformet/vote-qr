@@ -538,6 +538,10 @@
   async function lancerVote() {
     const q = document.getElementById('questionInput').value.trim();
     if (!q) { alert('Merci de saisir une affirmation avant de lancer le vote.'); return; }
+    if (isActive) {
+      const ok = confirm('Un vote est en cours. Lancer un nouveau vote effacera les résultats actuels.\n\nContinuer ?');
+      if (!ok) return;
+    }
 
     document.getElementById('btnLaunch').disabled = true;
     document.getElementById('btnStop').disabled   = false;
@@ -576,6 +580,8 @@
 
   // ── ARRÊTER ──────────────────────────────────────────────
   function arreterVote() {
+    const ok = confirm('Arrêter le vote en cours ?');
+    if (!ok) return;
     isActive = false;
     clearInterval(timerInterval);
     clearInterval(pollInterval);
@@ -647,6 +653,12 @@
       container.appendChild(row);
     });
   }
+  window.addEventListener('beforeunload', function(e) {
+    if (isActive) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
 </script>
 
 </body>
