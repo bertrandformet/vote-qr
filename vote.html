@@ -159,7 +159,7 @@
         return;
       }
 
-      window.location.href = WEBHOOK_ECRITURE + '?action=write&c=' + c + '&t=' + Date.now();
+      window.location.href = WEBHOOK_ECRITURE + '?action=write&vote=' + c + '&t=' + Date.now();
     }
 
     function showSuccess(choice, question, networkError = false) {
