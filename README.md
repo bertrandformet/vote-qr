@@ -146,7 +146,7 @@ Dashboard formateur (fichier local)
 ```
 
 **Pourquoi le paramètre s'appelle `vote` et non `c` ?**  
-L'infrastructure de Google filtrent les paramètres courts comme `c=2`, `c=3`, `c=4` (confondus avec des paramètres de tracking). Le renommage en `vote=` est indispensable pour que les choix 2, 3 et 4 fonctionnent.
+L'infrastructure de Google filtre les paramètres courts comme `c=2`, `c=3`, `c=4` (confondus avec des paramètres de tracking). Le renommage en `vote=` est indispensable pour que les choix 2, 3 et 4 fonctionnent.
 
 **Pourquoi `fetch` avec `mode: 'no-cors'` dans `vote.html` ?**  
 La requête vers Apps Script est cross-origin. Avec `no-cors`, le navigateur envoie la requête mais ne lit pas la réponse. C'est suffisant : on n'a besoin que de déclencher l'écriture, pas de lire le résultat.
