@@ -150,7 +150,7 @@
       4: { label: 'Pas du tout d\'accord',  color: '#ef4444', bg: 'rgba(239,68,68,0.15)',  border: '#ef4444' },
     };
 
-    function init() {
+    async function init() {
       const params = new URLSearchParams(window.location.search);
       const c = parseInt(params.get('c'));
 
@@ -159,7 +159,17 @@
         return;
       }
 
-      window.location.href = WEBHOOK_ECRITURE + '?action=write&vote=' + c + '&t=' + Date.now();
+      const choice = CHOICES[c];
+
+      try {
+        await fetch(
+          WEBHOOK_ECRITURE + '?action=write&vote=' + c + '&t=' + Date.now(),
+          { method: 'GET', mode: 'no-cors', cache: 'no-store' }
+        );
+        showSuccess(choice, null);
+      } catch(e) {
+        showSuccess(choice, null, true);
+      }
     }
 
     function showSuccess(choice, question, networkError = false) {
