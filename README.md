@@ -42,9 +42,8 @@ Le système repose sur trois éléments : **Google Sheets** (stockage), **Google
 ### 1. Créer le Google Sheet
 
 1. Nouveau Google Sheets, renommer la feuille **`Feuille 1`** (exact).
-2. En ligne 1 : saisir des en-têtes lisibles — `c1`, `c2`, `c3`, `c4`, `question`.
-3. En ligne 2 : mettre `0` dans les cellules A2, B2, C2, D2. E2 reste vide.
-4. Noter l'**ID du classeur** (dans l'URL : `https://docs.google.com/spreadsheets/d/**{ID}**/edit`).
+2. En ligne 2 : mettre `0` dans les cellules A2, B2, C2, D2. E2 reste vide.
+3. Noter l'**ID du classeur** : dans l'URL du Sheet, c'est la longue chaîne entre `/d/` et `/edit` — `https://docs.google.com/spreadsheets/d/`**`1yynehP...BY3Lo`**`/edit`.
 
 ### 2. Créer et déployer l'Apps Script
 
@@ -99,8 +98,7 @@ function handleRequest(e) {
 1. **Déployer → Nouveau déploiement → Application Web**
 2. Exécuter en tant que : **Moi**
 3. Accès : **Tout le monde**
-4. Copier l'URL de déploiement (`https://script.google.com/macros/s/.../exec`).
-
+4. Copier l'URL de déploiement : c'est la longue chaîne entre `/s/` et `/exec` — `https://script.google.com/macros/s/`**`AKfycbz...`**`/exec`.
 > À chaque modification du script, créer un **nouveau déploiement** (pas "Mettre à jour") pour que les changements prennent effet.
 
 ### 3. Héberger `vote.html` sur GitHub Pages
@@ -148,7 +146,7 @@ Dashboard formateur (fichier local)
 ```
 
 **Pourquoi le paramètre s'appelle `vote` et non `c` ?**  
-Les CDN de Google filtrent les paramètres courts comme `c=2`, `c=3`, `c=4` (confondus avec des paramètres de tracking). Le renommage en `vote=` est indispensable pour que les choix 2, 3 et 4 fonctionnent.
+L'infrastructure de Google filtrent les paramètres courts comme `c=2`, `c=3`, `c=4` (confondus avec des paramètres de tracking). Le renommage en `vote=` est indispensable pour que les choix 2, 3 et 4 fonctionnent.
 
 **Pourquoi `fetch` avec `mode: 'no-cors'` dans `vote.html` ?**  
 La requête vers Apps Script est cross-origin. Avec `no-cors`, le navigateur envoie la requête mais ne lit pas la réponse. C'est suffisant : on n'a besoin que de déclencher l'écriture, pas de lire le résultat.
