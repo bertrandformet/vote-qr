@@ -4,6 +4,9 @@ Outil de vote par QR code pour formateurs. Les participants scannent un QR code 
 
 **Auteur :** Bertrand Formet — [Licence Creative Commons Attribution 4.0 (CC BY 4.0)](LICENSE)
 
+> **Version prête à l'emploi** : les fichiers de ce dépôt pointent déjà sur le Google Sheet et l'Apps Script de Bertrand Formet. Pour utiliser le système tel quel, ouvrir [https://bertrandformet.github.io/vote-qr/dashboard.html](https://bertrandformet.github.io/vote-qr/dashboard.html) et saisir `https://bertrandformet.github.io/vote-qr` comme URL GitHub Pages.
+
+
 ---
 
 ## Utilisation
