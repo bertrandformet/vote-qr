@@ -555,10 +555,10 @@
     document.getElementById('btnStop').disabled   = false;
 
     try {
-      await fetch(WEBHOOK + '?action=reset', {
+      await fetch(WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q })
+        body: JSON.stringify({ action: 'reset', question: q })
       });
     } catch(e) {
       console.warn('Reset webhook error', e);
@@ -582,7 +582,7 @@
 
     // Poll
     clearInterval(pollInterval);
-    pollInterval = setInterval(pollResults, 3000);
+    pollInterval = setInterval(pollResults, 10000);
     pollResults();
   }
 
@@ -617,7 +617,11 @@
   // ── POLL ─────────────────────────────────────────────────
   async function pollResults() {
     try {
-      const res  = await fetch(WEBHOOK + '?action=read', { method: 'POST' });
+      const res  = await fetch(WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'read' })
+      });
       const data = await res.json();
       renderBars(data);
       document.getElementById('lastUpdate').textContent =
