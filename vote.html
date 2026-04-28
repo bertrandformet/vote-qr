@@ -163,10 +163,10 @@
       const choice = CHOICES[c];
 
       try {
-        const res = await fetch(WEBHOOK_ECRITURE + '?action=write', {
+        const res = await fetch(WEBHOOK_ECRITURE, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ c })
+          body: JSON.stringify({ action: 'write', c })
         });
 
         let question = null;
