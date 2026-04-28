@@ -610,10 +610,21 @@
   }
 
   // ── POLL ─────────────────────────────────────────────────
+  const CSV_URL = 'https://docs.google.com/spreadsheets/d/1yynehPOmivMRL6mt3jRsN61xxuKCargWQ6wOtzBY3Lo/gviz/tq?tqx=out:csv&range=A2:E2&sheet=Feuille%201';
+
   async function pollResults() {
     try {
-      const res = await fetch(WEBHOOK + '?action=read');
-      const data = await res.json();
+      const res  = await fetch(CSV_URL + '&t=' + Date.now());
+      const text = await res.text();
+      // CSV: "3","0","0","0","question"
+      const vals = text.replace(/"/g, '').split(',');
+      const data = {
+        c1: parseInt(vals[0]) || 0,
+        c2: parseInt(vals[1]) || 0,
+        c3: parseInt(vals[2]) || 0,
+        c4: parseInt(vals[3]) || 0,
+        question: vals[4] || ''
+      };
       renderBars(data);
       document.getElementById('lastUpdate').textContent =
         'Mis à jour : ' + new Date().toLocaleTimeString('fr-FR');
