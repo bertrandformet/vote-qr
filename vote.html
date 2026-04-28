@@ -162,16 +162,11 @@
       const choice = CHOICES[c];
 
       try {
-        await new Promise((resolve, reject) => {
-          const img = new Image();
-          const timer = setTimeout(resolve, 3000);
-          img.onload = () => { clearTimeout(timer); resolve(); };
-          img.onerror = () => { clearTimeout(timer); reject(new Error('network')); };
-          img.src = WEBHOOK_ECRITURE + '?action=write&c=' + c + '&t=' + Date.now();
-        });
-
+        await fetch(
+          WEBHOOK_ECRITURE + '?action=write&c=' + c + '&t=' + Date.now(),
+          { method: 'GET', mode: 'no-cors' }
+        );
         showSuccess(choice, null);
-
       } catch(e) {
         showSuccess(choice, null, true);
       }
