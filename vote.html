@@ -163,7 +163,9 @@
       const choice = CHOICES[c];
 
       try {
-        const res = await fetch(WEBHOOK_ECRITURE + '?action=write&c=' + c);
+        const res = await fetch(WEBHOOK_ECRITURE + '?action=write&c=' + c, {
+          mode: 'no-cors'
+        });
 
         let question = null;
         if (res.ok) {

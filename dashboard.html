@@ -552,7 +552,9 @@
     document.getElementById('btnStop').disabled   = false;
 
     try {
-      await fetch(WEBHOOK + '?action=reset&question=' + encodeURIComponent(q));
+      await fetch(WEBHOOK + '?action=reset&question=' + encodeURIComponent(q), {
+        mode: 'no-cors'
+      });
     } catch(e) {
       console.warn('Reset webhook error', e);
     }
