@@ -38,6 +38,14 @@ Outil de vote par QR code pour formateurs. Les participants scannent un QR code 
 | `?c=4` | Pas du tout d'accord | Rouge | https://votre-nom.github.io.github.io/vote-qr/vote.html?c=4 |
 
 ---
+## Données personnelles
+
+Ce système ne collecte **aucune donnée personnelle**. Aucun compte n'est requis, aucun cookie n'est déposé, aucun identifiant (adresse IP, empreinte navigateur, géolocalisation) n'est stocké.
+Le Google Sheet ne contient que quatre compteurs anonymes (nombre de votes par choix) et le texte de l'affirmation en cours.
+La page `vote.html` envoie la requête en `mode: 'no-cors'` sans lire la réponse : le serveur ne reçoit que le numéro du choix (1 à 4) et un horodatage de cache-busting.
+Le `sessionStorage` utilisé par le tableau de bord est limité à l'onglet en cours et disparaît à sa fermeture — il ne persiste aucune donnée sur le poste du formateur.
+
+---
 
 ## Redéployer ailleurs
 
