@@ -491,7 +491,7 @@
   let timerInterval = null;
   let pollInterval  = null;
   let qrGenerated   = false;
-  let currentFetchController = null;
+  let pollSeq = 0;
 
   // ── QR GENERATION ────────────────────────────────────────
   function applyUrl() {
@@ -552,18 +552,17 @@
     document.getElementById('btnStop').disabled   = false;
 
     try {
-      await new Promise((resolve) => {
-        const img = new Image();
-        img.onload = img.onerror = resolve;
-        img.src = WEBHOOK + '?action=reset&question=' + encodeURIComponent(q) + '&t=' + Date.now();
-        setTimeout(resolve, 3000);
-      });
+      await fetch(
+        WEBHOOK + '?action=reset&question=' + encodeURIComponent(q) + '&t=' + Date.now(),
+        { method: 'GET', mode: 'no-cors', cache: 'no-store' }
+      );
     } catch(e) {
       console.warn('Reset webhook error', e);
     }
 
     isActive   = true;
     timerStart = Date.now();
+    sessionStorage.setItem('voteState', JSON.stringify({ question: q, timerStart }));
 
     // Status
     document.getElementById('statusDot').classList.add('active');
@@ -591,12 +590,13 @@
     isActive = false;
     clearInterval(timerInterval);
     clearInterval(pollInterval);
-    if (currentFetchController) { currentFetchController.abort(); currentFetchController = null; }
+    pollSeq++;
 
     document.getElementById('btnLaunch').disabled = false;
     document.getElementById('btnStop').disabled   = true;
     document.getElementById('statusDot').classList.remove('active');
     document.getElementById('statusText').textContent = 'Vote terminé';
+    sessionStorage.removeItem('voteState');
 
     // Final poll
     pollResults();
@@ -636,10 +636,10 @@
   }
 
   async function pollResults() {
-    if (currentFetchController) currentFetchController.abort();
-    currentFetchController = new AbortController();
+    const mySeq = ++pollSeq;
     try {
-      const res  = await fetch(CSV_URL + '&t=' + Date.now(), { signal: currentFetchController.signal });
+      const res  = await fetch(CSV_URL + '&t=' + Date.now());
+      if (mySeq !== pollSeq) return;
       const text = await res.text();
       const vals = parseCSVLine(text.trim());
       const data = {
@@ -649,12 +649,11 @@
         c4: parseInt(vals[3]) || 0,
         question: vals[4] || ''
       };
-      currentFetchController = null;
       renderBars(data);
       document.getElementById('lastUpdate').textContent =
         'Mis à jour : ' + new Date().toLocaleTimeString('fr-FR');
     } catch(e) {
-      if (e.name !== 'AbortError') console.warn('Poll error', e);
+      console.warn('Poll error', e);
     }
   }
 
@@ -676,15 +675,29 @@
 
       const row = document.createElement('div');
       row.className = 'bar-row';
-      row.innerHTML = `
-        <div class="bar-label ${ch.cls}">${ch.shortLabel}</div>
-        <div class="bar-track">
-          <div class="bar-fill ${ch.cls}" style="width:${width}%">
-            ${width > 15 ? `<span class="pct">${pct}%</span>` : ''}
-          </div>
-        </div>
-        <div class="bar-count ${ch.cls}">${count}</div>
-      `;
+
+      const label = document.createElement('div');
+      label.className = 'bar-label ' + ch.cls;
+      label.textContent = ch.shortLabel;
+
+      const track = document.createElement('div');
+      track.className = 'bar-track';
+      const fill = document.createElement('div');
+      fill.className = 'bar-fill ' + ch.cls;
+      fill.style.width = width + '%';
+      if (width > 15) {
+        const pctSpan = document.createElement('span');
+        pctSpan.className = 'pct';
+        pctSpan.textContent = pct + '%';
+        fill.appendChild(pctSpan);
+      }
+      track.appendChild(fill);
+
+      const countEl = document.createElement('div');
+      countEl.className = 'bar-count ' + ch.cls;
+      countEl.textContent = pct + '%';
+
+      row.append(label, track, countEl);
       container.appendChild(row);
     });
   }
@@ -771,6 +784,46 @@
 
   function afficherQR()  { openQRTab(true);  }
   function exporterA4()  { openQRTab(false); }
+
+  async function checkConnection() {
+    try {
+      const res = await fetch(CSV_URL + '&t=' + Date.now());
+      if (!res.ok) throw new Error(res.status);
+      document.getElementById('statusText').textContent = 'Connecté';
+    } catch(e) {
+      document.getElementById('statusText').textContent = 'Sheet injoignable';
+      document.getElementById('statusDot').style.background = '#ef4444';
+      console.warn('Connection check failed', e);
+    }
+  }
+  checkConnection();
+
+  (function restoreVote() {
+    const saved = sessionStorage.getItem('voteState');
+    if (!saved) return;
+    try {
+      const state = JSON.parse(saved);
+      isActive   = true;
+      timerStart = state.timerStart;
+
+      document.getElementById('questionInput').value = state.question;
+      const cq = document.getElementById('currentQuestion');
+      cq.textContent = state.question;
+      cq.classList.remove('empty');
+
+      document.getElementById('statusDot').classList.add('active');
+      document.getElementById('statusText').textContent = 'Vote en cours';
+      document.getElementById('btnLaunch').disabled = true;
+      document.getElementById('btnStop').disabled   = false;
+
+      timerInterval = setInterval(updateTimer, 1000);
+      updateTimer();
+      pollInterval = setInterval(pollResults, 3000);
+      pollResults();
+    } catch(e) {
+      sessionStorage.removeItem('voteState');
+    }
+  })();
 
   window.addEventListener('beforeunload', function(e) {
     if (isActive) {
