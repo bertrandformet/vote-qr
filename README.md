@@ -32,10 +32,10 @@ Outil de vote par QR code pour formateurs. Les participants scannent un QR code 
 
 | QR | Réponse | Couleur | URL |
 |----|---------|---------|---------|
-| `?c=1` | Tout à fait d'accord | Vert | https://votre-nom.github.io.github.io/vote-qr/vote.html?c=1 |
-| `?c=2` | Plutôt d'accord | Vert clair | https://votre-nom.github.io.github.io/vote-qr/vote.html?c=2 |
-| `?c=3` | Plutôt pas d'accord | Orange | https://votre-nom.github.io.github.io/vote-qr/vote.html?c=3 |
-| `?c=4` | Pas du tout d'accord | Rouge | https://votre-nom.github.io.github.io/vote-qr/vote.html?c=4 |
+| `?c=1` | Tout à fait d'accord | Vert | https://votre-nom.github.io/vote-qr/vote.html?c=1 |
+| `?c=2` | Plutôt d'accord | Vert clair | https://votre-nom.github.io/vote-qr/vote.html?c=2 |
+| `?c=3` | Plutôt pas d'accord | Orange | https://votre-nom.github.io/vote-qr/vote.html?c=3 |
+| `?c=4` | Pas du tout d'accord | Rouge | https://votre-nom.github.io/vote-qr/vote.html?c=4 |
 
 ---
 ## Données personnelles
