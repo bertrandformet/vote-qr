@@ -148,6 +148,13 @@
     .btn-stop:hover { background: rgba(239,68,68,0.1); }
     .btn-stop:disabled { opacity: 0.3; cursor: not-allowed; }
 
+    .btn-reset {
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-reset:hover { background: #2a2d3a; color: var(--text); }
+
     /* TIMER */
     .timer-bar {
       display: flex;
@@ -403,15 +410,15 @@
          placeholder="Tapez votre affirmation ici…" />
   <button class="btn btn-launch" id="btnLaunch" onclick="lancerVote()">▶ Lancer le vote</button>
   <button class="btn btn-stop" id="btnStop" onclick="arreterVote()" disabled>■ Arrêter</button>
+  <button class="btn btn-reset" id="btnReset" onclick="resetVote()" style="display:none">↺ Remettre à zéro</button>
 </div>
 
 <!-- QUESTION EN COURS -->
 <div class="current-question empty" id="currentQuestion">Aucun vote en cours</div>
 
-<!-- TIMER + TOTAL -->
+<!-- TIMER -->
 <div class="timer-bar">
   <div class="timer" id="timerDisplay">00:00</div>
-  <div class="total-votes">Réponses reçues <span id="totalVotes">0</span></div>
 </div>
 
 <!-- MAIN GRID -->
@@ -550,6 +557,7 @@
 
     document.getElementById('btnLaunch').disabled = true;
     document.getElementById('btnStop').disabled   = false;
+    document.getElementById('btnReset').style.display = 'none';
 
     try {
       await fetch(
@@ -594,12 +602,38 @@
 
     document.getElementById('btnLaunch').disabled = false;
     document.getElementById('btnStop').disabled   = true;
+    document.getElementById('btnReset').style.display = '';
     document.getElementById('statusDot').classList.remove('active');
     document.getElementById('statusText').textContent = 'Vote terminé';
     sessionStorage.removeItem('voteState');
 
     // Final poll
     pollResults();
+  }
+
+  // ── RESET ───────────────────────────────────────────────
+  function resetVote() {
+    const ok = confirm('Remettre les résultats à zéro ?');
+    if (!ok) return;
+
+    fetch(
+      WEBHOOK + '?action=reset&question=&t=' + Date.now(),
+      { method: 'GET', mode: 'no-cors', cache: 'no-store' }
+    );
+
+    document.getElementById('btnReset').style.display = 'none';
+    document.getElementById('currentQuestion').textContent = 'Aucun vote en cours';
+    document.getElementById('currentQuestion').classList.add('empty');
+    document.getElementById('timerDisplay').textContent = '00:00';
+    document.getElementById('timerDisplay').className = 'timer';
+    document.getElementById('statusText').textContent = 'En attente';
+
+    const container = document.getElementById('barsContainer');
+    container.innerHTML = '';
+    const msg = document.createElement('div');
+    msg.className = 'no-vote-msg';
+    msg.textContent = 'Lance un vote pour voir les résultats.';
+    container.appendChild(msg);
   }
 
   // ── TIMER ────────────────────────────────────────────────
@@ -662,8 +696,6 @@
     const counts  = [data.c1 || 0, data.c2 || 0, data.c3 || 0, data.c4 || 0];
     const total   = counts.reduce((a, b) => a + b, 0);
     const max     = Math.max(...counts, 1);
-
-    document.getElementById('totalVotes').textContent = total;
 
     const container = document.getElementById('barsContainer');
     container.innerHTML = '';
