@@ -477,7 +477,7 @@
 </div>
 
 <footer>
-  <span>Rafraîchissement toutes les 3s</span>
+  <span>Rafraîchissement toutes les 2s</span>
   <span id="lastUpdate">—</span>
 </footer>
 
@@ -587,7 +587,7 @@
 
     // Poll
     clearInterval(pollInterval);
-    pollInterval = setInterval(pollResults, 3000);
+    pollInterval = setInterval(pollResults, 2000);
     pollResults();
   }
 
@@ -851,7 +851,7 @@
 
       timerInterval = setInterval(updateTimer, 1000);
       updateTimer();
-      pollInterval = setInterval(pollResults, 3000);
+      pollInterval = setInterval(pollResults, 2000);
       pollResults();
     } catch(e) {
       sessionStorage.removeItem('voteState');
