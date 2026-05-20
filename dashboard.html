@@ -615,6 +615,7 @@
   function resetVote() {
     const ok = confirm('Remettre les résultats à zéro ?');
     if (!ok) return;
+    pollSeq++;
 
     fetch(
       WEBHOOK + '?action=reset&question=&t=' + Date.now(),
